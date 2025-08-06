@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel Dashboard - Web Application</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 500;
+        }
+
+        .workbook-info {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .workbook-selector {
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: 1px solid #34495e;
+            background: #34495e;
+            color: white;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            background: white;
+            padding: 8px 20px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .toolbar button {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .toolbar button:hover {
+            background: #f8f9fa;
+            border-color: #0066cc;
+        }
+
+        .toolbar button.active {
+            background: #0066cc;
+            color: white;
+        }
+
+        .formula-bar {
+            background: white;
+            padding: 8px 20px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .cell-reference {
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            background: #f8f9fa;
+            min-width: 80px;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+        }
+
+        .formula-input {
+            flex: 1;
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        /* Sheet tabs */
+        .sheet-tabs-container {
+            background: #f8f9fa;
+            border-top: 1px solid #ddd;
+            padding: 0;
+            display: flex;
+            align-items: flex-end;
+            overflow-x: auto;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 35px;
+        }
+
+        .sheet-tab {
+            padding: 8px 20px;
+            background: white;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            cursor: pointer;
+            margin-right: 2px;
+            min-width: 100px;
+            text-align: center;
+            transition: all 0.2s;
+            font-size: 13px;
+        }
+
+        .sheet-tab:hover {
+            background: #e9ecef;
+        }
+
+        .sheet-tab.active {
+            background: white;
+            border-top: 2px solid #0066cc;
+            font-weight: 600;
+        }
+
+        /* Spreadsheet container */
+        .spreadsheet-container {
+            position: absolute;
+            top: 130px;
+            left: 0;
+            right: 0;
+            bottom: 35px;
+            overflow: auto;
+            background: white;
+        }
+
+        .spreadsheet {
+            display: inline-block;
+            min-width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .spreadsheet th,
+        .spreadsheet td {
+            border: 1px solid #d0d7de;
+            padding: 4px 8px;
+            min-width: 80px;
+            height: 25px;
+            position: relative;
+        }
+
+        .spreadsheet th {
+            background: #f6f8fa;
+            font-weight: 500;
+            text-align: center;
+            user-select: none;
+            position: sticky;
+            z-index: 10;
+        }
+
+        .spreadsheet th.row-header {
+            width: 50px;
+            min-width: 50px;
+            left: 0;
+            z-index: 11;
+        }
+
+        .spreadsheet thead th {
+            top: 0;
+            z-index: 11;
+        }
+
+        .spreadsheet thead th:first-child {
+            z-index: 12;
+        }
+
+        .spreadsheet td {
+            background: white;
+            cursor: cell;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .spreadsheet td.selected {
+            outline: 2px solid #0066cc;
+            outline-offset: -1px;
+            background: #e6f3ff;
+        }
+
+        .spreadsheet td.formula-cell {
+            color: #0066cc;
+        }
+
+        .spreadsheet td.error-cell {
+            color: #d73a49;
+            background: #ffebe9;
+        }
+
+        .spreadsheet td input {
+            border: none;
+            width: 100%;
+            height: 100%;
+            padding: 2px;
+            font-family: inherit;
+            font-size: inherit;
+            background: white;
+        }
+
+        /* Cell styles from database */
+        .cell-bold { font-weight: bold; }
+        .cell-italic { font-style: italic; }
+        .cell-underline { text-decoration: underline; }
+        .cell-center { text-align: center; }
+        .cell-right { text-align: right; }
+        .cell-left { text-align: left; }
+
+        /* Loading overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loading-spinner {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #0066cc;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Dropdown selector */
+        .dropdown-selector {
+            position: absolute;
+            background: white;
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .dropdown-selector.active {
+            display: block;
+        }
+
+        .dropdown-option {
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        .dropdown-option:hover {
+            background: #f0f2f5;
+        }
+
+        /* Status bar */
+        .status-bar {
+            position: fixed;
+            bottom: 35px;
+            left: 0;
+            right: 0;
+            background: #f8f9fa;
+            padding: 5px 20px;
+            border-top: 1px solid #ddd;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .calculation-status {
+            display: flex;
+            gap: 20px;
+        }
+
+        .calc-item {
+            display: flex;
+            gap: 5px;
+        }
+
+        .calc-label {
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <div>Loading spreadsheet data...</div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+        <h1>Excel Web Dashboard</h1>
+        <div class="workbook-info">
+            <select id="workbookSelector" class="workbook-selector">
+                <option value="">Select Workbook</option>
+            </select>
+            <span id="lastSaved">Last saved: Never</span>
+            <button onclick="saveChanges()" style="padding: 5px 15px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                💾 Save Changes
+            </button>
+        </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <button onclick="refreshData()" title="Refresh">🔄 Refresh</button>
+        <button onclick="recalculate()" title="Recalculate">📊 Recalculate</button>
+        <button onclick="exportExcel()" title="Export to Excel">📥 Export</button>
+        <button onclick="toggleFormulas()" id="formulaToggle" title="Show Formulas">ƒx Formulas</button>
+        <button onclick="autoFitColumns()" title="Auto-fit Columns">↔️ Auto-fit</button>
+        <span style="margin-left: auto; font-size: 12px; color: #666;">
+            <span id="cellCount">0 cells</span> | 
+            <span id="formulaCount">0 formulas</span>
+        </span>
+    </div>
+
+    <!-- Formula Bar -->
+    <div class="formula-bar">
+        <div class="cell-reference" id="cellReference">A1</div>
+        <span>ƒx</span>
+        <input type="text" class="formula-input" id="formulaInput" placeholder="Enter formula or value">
+    </div>
+
+    <!-- Spreadsheet Container -->
+    <div class="spreadsheet-container" id="spreadsheetContainer">
+        <table class="spreadsheet" id="spreadsheet">
+            <thead id="spreadsheetHeader">
+                <!-- Column headers will be generated -->
+            </thead>
+            <tbody id="spreadsheetBody">
+                <!-- Rows will be generated -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+        <div class="calculation-status">
+            <div class="calc-item">
+                <span class="calc-label">SUM:</span>
+                <span id="sumValue">0</span>
+            </div>
+            <div class="calc-item">
+                <span class="calc-label">AVG:</span>
+                <span id="avgValue">0</span>
+            </div>
+            <div class="calc-item">
+                <span class="calc-label">COUNT:</span>
+                <span id="countValue">0</span>
+            </div>
+        </div>
+        <div>
+            <span id="calculationMode">Ready</span>
+        </div>
+    </div>
+
+    <!-- Sheet Tabs -->
+    <div class="sheet-tabs-container" id="sheetTabs">
+        <!-- Sheet tabs will be generated -->
+    </div>
+
+    <!-- Dropdown Selector for Data Validation -->
+    <div id="dropdownSelector" class="dropdown-selector"></div>
+
+    <script src="js/excel-engine.js"></script>
+    <script src="js/formula-parser.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script>
+        // Initialize the dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            ExcelDashboard.init();
+        });
+    </script>
+</body>
+</html>
