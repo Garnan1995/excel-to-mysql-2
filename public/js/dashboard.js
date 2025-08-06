@@ -6,7 +6,7 @@ const ExcelDashboard = {
     currentWorksheet: null,
     selectedCell: null,
     showFormulas: false,
-    apiUrl: '/api/excel-api.php',
+    apiUrl: '../api/excel-api.php',
     
     /**
      * Initialize the dashboard
