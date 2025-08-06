@@ -1,5 +1,5 @@
 <?php
-require 'vendor/autoload.php';
+require __DIR__ . '/../vendor/autoload.php';
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
@@ -48,6 +48,7 @@ class ExcelToMySQLExtractor {
             $this->db->commit();
             
             echo "Excel file successfully extracted to MySQL!\n";
+            echo "Workbook ID: " . $this->workbookId . "\n";
             
         } catch (Exception $e) {
             $this->db->rollBack();
@@ -61,6 +62,10 @@ class ExcelToMySQLExtractor {
     private function saveWorkbook($filePath) {
         $properties = $this->spreadsheet->getProperties();
         
+        // Handle dates properly - they might be DateTime objects or integers
+        $createdDate = $properties->getCreated();
+        $modifiedDate = $properties->getModified();
+        
         $metadata = [
             'creator' => $properties->getCreator(),
             'last_modified_by' => $properties->getLastModifiedBy(),
@@ -70,9 +75,23 @@ class ExcelToMySQLExtractor {
             'keywords' => $properties->getKeywords(),
             'category' => $properties->getCategory(),
             'company' => $properties->getCompany(),
-            'created' => $properties->getCreated() ? $properties->getCreated()->format('Y-m-d H:i:s') : null,
-            'modified' => $properties->getModified() ? $properties->getModified()->format('Y-m-d H:i:s') : null
+            'created' => null,
+            'modified' => null
         ];
+        
+        // Handle created date
+        if ($createdDate instanceof \DateTime) {
+            $metadata['created'] = $createdDate->format('Y-m-d H:i:s');
+        } elseif (is_numeric($createdDate) && $createdDate > 0) {
+            $metadata['created'] = date('Y-m-d H:i:s', $createdDate);
+        }
+        
+        // Handle modified date
+        if ($modifiedDate instanceof \DateTime) {
+            $metadata['modified'] = $modifiedDate->format('Y-m-d H:i:s');
+        } elseif (is_numeric($modifiedDate) && $modifiedDate > 0) {
+            $metadata['modified'] = date('Y-m-d H:i:s', $modifiedDate);
+        }
         
         $stmt = $this->db->prepare("
             INSERT INTO workbooks (filename, file_hash, metadata) 
@@ -92,6 +111,8 @@ class ExcelToMySQLExtractor {
      * Process individual worksheet
      */
     private function processWorksheet(Worksheet $worksheet) {
+        echo "Processing worksheet: " . $worksheet->getTitle() . "\n";
+        
         // Save worksheet information
         $worksheetId = $this->saveWorksheetInfo($worksheet);
         
@@ -165,6 +186,8 @@ class ExcelToMySQLExtractor {
         $highestColumn = $worksheet->getHighestColumn();
         $highestColumnIndex = Coordinate::columnIndexFromString($highestColumn);
         
+        echo "  Processing cells (rows: $highestRow, columns: $highestColumnIndex)...\n";
+        
         // Prepare batch insert for better performance
         $cellStmt = $this->db->prepare("
             INSERT INTO cells (worksheet_id, cell_address, row_num, col_num, 
@@ -175,13 +198,16 @@ class ExcelToMySQLExtractor {
                     :formula_attributes, :hyperlink, :comment)
         ");
         
+        $cellCount = 0;
         for ($row = 1; $row <= $highestRow; $row++) {
             for ($col = 1; $col <= $highestColumnIndex; $col++) {
                 $cellAddress = Coordinate::stringFromColumnIndex($col) . $row;
                 $cell = $worksheet->getCell($cellAddress);
                 
-                // Skip empty cells unless they have formatting
-                if ($cell->getValue() === null && !$cell->getStyle()) {
+                // Skip completely empty cells (no value and no style)
+                if ($cell->getValue() === null && 
+                    $cell->getStyle()->getFont()->getName() === 'Calibri' &&
+                    $cell->getStyle()->getFont()->getSize() === 11) {
                     continue;
                 }
                 
@@ -208,8 +234,16 @@ class ExcelToMySQLExtractor {
                 
                 // Save cell style
                 $this->saveCellStyle($cell, $cellId);
+                $cellCount++;
+            }
+            
+            // Show progress every 100 rows
+            if ($row % 100 == 0) {
+                echo "    Processed $row rows...\n";
             }
         }
+        
+        echo "  Total cells saved: $cellCount\n";
     }
     
     /**
@@ -237,9 +271,13 @@ class ExcelToMySQLExtractor {
         }
         
         // Get formatted value
-        $data['formatted_value'] = $cell->getFormattedValue();
+        try {
+            $data['formatted_value'] = $cell->getFormattedValue();
+        } catch (Exception $e) {
+            $data['formatted_value'] = $data['value'];
+        }
         
-        // Check for formula
+        // Check for hyperlink
         if ($cell->hasHyperlink()) {
             $data['hyperlink'] = $cell->getHyperlink()->getUrl();
         }
@@ -247,10 +285,14 @@ class ExcelToMySQLExtractor {
         // Check for formula
         if ($cell->isFormula()) {
             $data['formula'] = $cell->getValue();
-            $data['formula_attributes'] = [
-                'calculated_value' => $cell->getCalculatedValue(),
-                'formula_attributes' => $cell->getFormulaAttributes()
-            ];
+            try {
+                $data['formula_attributes'] = [
+                    'calculated_value' => $cell->getCalculatedValue(),
+                    'formula_attributes' => $cell->getFormulaAttributes()
+                ];
+            } catch (Exception $e) {
+                $data['formula_attributes'] = ['error' => $e->getMessage()];
+            }
         }
         
         // Check for comment
@@ -321,7 +363,7 @@ class ExcelToMySQLExtractor {
             ':font_color' => $fontColor,
             ':fill_type' => $fill->getFillType(),
             ':fill_color' => $fillColor,
-            ':fill_pattern' => null, // Add if needed
+            ':fill_pattern' => null,
             ':border_top' => $borders->getTop()->getBorderStyle(),
             ':border_right' => $borders->getRight()->getBorderStyle(),
             ':border_bottom' => $borders->getBottom()->getBorderStyle(),
@@ -504,12 +546,12 @@ class ExcelToMySQLExtractor {
         foreach ($chartCollection as $chart) {
             $chartData = [
                 'title' => $chart->getTitle() ? $chart->getTitle()->getCaption() : null,
-                'plot_area' => [], // Add plot area details
+                'plot_area' => [],
                 'legend' => [
                     'position' => $chart->getLegend() ? $chart->getLegend()->getPosition() : null,
                     'overlay' => $chart->getLegend() ? $chart->getLegend()->getOverlay() : null
                 ],
-                'plot_series' => [] // Add series data
+                'plot_series' => []
             ];
             
             $stmt = $this->db->prepare("
@@ -525,7 +567,7 @@ class ExcelToMySQLExtractor {
             $stmt->execute([
                 ':worksheet_id' => $worksheetId,
                 ':chart_name' => $chart->getName(),
-                ':chart_type' => 'chart', // You can extract more specific type
+                ':chart_type' => 'chart',
                 ':position_from' => $topLeft,
                 ':position_to' => $bottomRight,
                 ':chart_data' => json_encode($chartData)
@@ -541,41 +583,57 @@ class ExcelToMySQLExtractor {
         
         foreach ($drawingCollection as $drawing) {
             if ($drawing instanceof \PhpOffice\PhpSpreadsheet\Worksheet\MemoryDrawing) {
+                ob_start();
+                switch ($drawing->getMimeType()) {
+                    case \PhpOffice\PhpSpreadsheet\Worksheet\MemoryDrawing::MIMETYPE_PNG:
+                        imagepng($drawing->getImageResource());
+                        break;
+                    case \PhpOffice\PhpSpreadsheet\Worksheet\MemoryDrawing::MIMETYPE_GIF:
+                        imagegif($drawing->getImageResource());
+                        break;
+                    case \PhpOffice\PhpSpreadsheet\Worksheet\MemoryDrawing::MIMETYPE_JPEG:
+                        imagejpeg($drawing->getImageResource());
+                        break;
+                }
                 $imageContents = ob_get_contents();
                 ob_end_clean();
-                
-                $properties = [
-                    'name' => $drawing->getName(),
-                    'description' => $drawing->getDescription(),
-                    'resizeProportional' => $drawing->getResizeProportional(),
-                    'rotation' => $drawing->getRotation(),
-                    'shadow' => $drawing->getShadow() ? [
-                        'visible' => $drawing->getShadow()->getVisible(),
-                        'direction' => $drawing->getShadow()->getDirection(),
-                        'distance' => $drawing->getShadow()->getDistance()
-                    ] : null
-                ];
-                
-                $stmt = $this->db->prepare("
-                    INSERT INTO embedded_objects (worksheet_id, object_type, object_name,
-                                                 position_from, width, height, 
-                                                 object_data, properties)
-                    VALUES (:worksheet_id, :object_type, :object_name,
-                            :position_from, :width, :height, 
-                            :object_data, :properties)
-                ");
-                
-                $stmt->execute([
-                    ':worksheet_id' => $worksheetId,
-                    ':object_type' => 'image',
-                    ':object_name' => $drawing->getName(),
-                    ':position_from' => $drawing->getCoordinates(),
-                    ':width' => $drawing->getWidth(),
-                    ':height' => $drawing->getHeight(),
-                    ':object_data' => $imageContents,
-                    ':properties' => json_encode($properties)
-                ]);
+            } elseif ($drawing instanceof \PhpOffice\PhpSpreadsheet\Worksheet\Drawing) {
+                $imageContents = file_get_contents($drawing->getPath());
+            } else {
+                continue;
             }
+            
+            $properties = [
+                'name' => $drawing->getName(),
+                'description' => $drawing->getDescription(),
+                'resizeProportional' => $drawing->getResizeProportional(),
+                'rotation' => $drawing->getRotation(),
+                'shadow' => $drawing->getShadow() ? [
+                    'visible' => $drawing->getShadow()->getVisible(),
+                    'direction' => $drawing->getShadow()->getDirection(),
+                    'distance' => $drawing->getShadow()->getDistance()
+                ] : null
+            ];
+            
+            $stmt = $this->db->prepare("
+                INSERT INTO embedded_objects (worksheet_id, object_type, object_name,
+                                             position_from, width, height, 
+                                             object_data, properties)
+                VALUES (:worksheet_id, :object_type, :object_name,
+                        :position_from, :width, :height, 
+                        :object_data, :properties)
+            ");
+            
+            $stmt->execute([
+                ':worksheet_id' => $worksheetId,
+                ':object_type' => 'image',
+                ':object_name' => $drawing->getName(),
+                ':position_from' => $drawing->getCoordinates(),
+                ':width' => $drawing->getWidth(),
+                ':height' => $drawing->getHeight(),
+                ':object_data' => $imageContents,
+                ':properties' => json_encode($properties)
+            ]);
         }
     }
     
@@ -600,12 +658,4 @@ class ExcelToMySQLExtractor {
             ]);
         }
     }
-}
-
-// Usage example
-try {
-    $extractor = new ExcelToMySQLExtractor('localhost', 'your_database', 'username', 'password');
-    $extractor->extractExcelFile('path/to/your/excel/file.xlsx');
-} catch (Exception $e) {
-    echo "Error: " . $e->getMessage() . "\n";
 }
