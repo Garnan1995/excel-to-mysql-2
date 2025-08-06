@@ -1,0 +1,22 @@
+{
+    "name": "yourname/excel-to-mysql",
+    "description": "Excel to MySQL data extractor with complete cell information",
+    "type": "project",
+    "require": {
+        "phpoffice/phpspreadsheet": "^1.29",
+        "vlucas/phpdotenv": "^5.5"
+    },
+    "require-dev": {
+        "symfony/var-dumper": "^6.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "scripts": {
+        "setup": "php scripts/setup-database.php",
+        "extract": "php scripts/extract.php",
+        "reconstruct": "php scripts/reconstruct.php"
+    }
+}

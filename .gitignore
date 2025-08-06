@@ -1,0 +1,10 @@
+/vendor/
+.env
+*.log
+/input/*.xlsx
+/input/*.xls
+/output/*.xlsx
+/output/*.xls
+.DS_Store
+Thumbs.db
+composer.lock
