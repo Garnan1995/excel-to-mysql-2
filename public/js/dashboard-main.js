@@ -598,17 +598,19 @@ const ExcelDashboard = {
     },
     
     // D4 and D5 change handlers (called from HTML)
+    /*
     async onD4Change(value) {
         if (typeof ValidationManager !== 'undefined') {
             await ValidationManager.onD4Change(value);
         }
     },
-    
+
     async onD5Change(value) {
         if (typeof ValidationManager !== 'undefined') {
             await ValidationManager.onD5Change(value);
         }
     },
+    */
     
     // Utility methods
     
