@@ -4,553 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Excel Dashboard - Web Application</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f0f2f5;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
-
-        /* Header */
-        .header {
-            background: #2c3e50;
-            color: white;
-            padding: 10px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            flex-shrink: 0;
-        }
-
-        .header h1 {
-            font-size: 20px;
-            font-weight: 500;
-        }
-
-        .workbook-info {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-        }
-
-        .workbook-selector {
-            padding: 5px 10px;
-            border-radius: 4px;
-            border: 1px solid #34495e;
-            background: #34495e;
-            color: white;
-        }
-
-        /* Toolbar */
-        .toolbar {
-            background: white;
-            padding: 8px 20px;
-            border-bottom: 1px solid #ddd;
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            flex-shrink: 0;
-        }
-
-        .toolbar button {
-            padding: 6px 12px;
-            border: 1px solid #ddd;
-            background: white;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 13px;
-            transition: all 0.2s;
-        }
-
-        .toolbar button:hover {
-            background: #f8f9fa;
-            border-color: #0066cc;
-        }
-
-        .toolbar button.active {
-            background: #0066cc;
-            color: white;
-        }
-
-        .toolbar button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        /* Formula Bar */
-        .formula-bar {
-            background: white;
-            padding: 8px 20px;
-            border-bottom: 1px solid #ddd;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-shrink: 0;
-        }
-
-        .cell-reference {
-            padding: 5px 10px;
-            border: 1px solid #ddd;
-            background: #f8f9fa;
-            min-width: 80px;
-            text-align: center;
-            font-family: 'Courier New', monospace;
-        }
-
-        .formula-input {
-            flex: 1;
-            padding: 5px 10px;
-            border: 1px solid #ddd;
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
-        }
-
-        /* Main Content Area */
-        .main-content {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-            position: relative;
-        }
-
-        /* Validation Sidebar - NEW */
-        .validation-sidebar {
-            width: 320px;
-            background: white;
-            border-right: 1px solid #ddd;
-            display: flex;
-            flex-direction: column;
-            transition: margin-left 0.3s ease;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
-            overflow: hidden;
-        }
-
-        .validation-sidebar.collapsed {
-            margin-left: -320px;
-        }
-
-        .sidebar-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-shrink: 0;
-        }
-
-        .sidebar-header h2 {
-            font-size: 16px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .sidebar-toggle {
-            cursor: pointer;
-            padding: 5px;
-            border-radius: 4px;
-            transition: background 0.2s;
-        }
-
-        .sidebar-toggle:hover {
-            background: rgba(255,255,255,0.2);
-        }
-
-        .sidebar-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 15px;
-        }
-
-        .validation-group {
-            margin-bottom: 20px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 12px;
-            border: 1px solid #e0e0e0;
-        }
-
-        .validation-group-header {
-            font-size: 12px;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-
-        .validation-item {
-            margin-bottom: 15px;
-        }
-
-        .validation-label {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 6px;
-        }
-
-        .validation-label-text {
-            font-size: 13px;
-            font-weight: 500;
-            color: #333;
-        }
-
-        .validation-cell-ref {
-            font-size: 11px;
-            color: #666;
-            font-family: 'Courier New', monospace;
-            background: white;
-            padding: 2px 6px;
-            border-radius: 3px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .validation-cell-ref:hover {
-            background: #e3f2fd;
-            color: #0066cc;
-        }
-
-        .validation-select {
-            width: 100%;
-            padding: 8px 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 13px;
-            background: white;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .validation-select:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 2px rgba(102,126,234,0.1);
-        }
-
-        .validation-select:hover {
-            border-color: #667eea;
-        }
-
-        .validation-search {
-            width: 100%;
-            padding: 8px 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 13px;
-            margin-bottom: 6px;
-            background: white;
-        }
-
-        .validation-search:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 2px rgba(102,126,234,0.1);
-        }
-
-        /* Quick Actions */
-        .quick-actions {
-            padding: 12px 15px;
-            background: #f8f9fa;
-            border-top: 1px solid #e0e0e0;
-            display: flex;
-            gap: 10px;
-            flex-shrink: 0;
-        }
-
-        .quick-actions button {
-            flex: 1;
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            background: white;
-            border-radius: 5px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .quick-actions button:hover {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
-        }
-
-        /* Sidebar Toggle Button (when collapsed) */
-        .sidebar-expand-btn {
-            position: absolute;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 10px 6px;
-            border-radius: 0 8px 8px 0;
-            cursor: pointer;
-            box-shadow: 2px 0 8px rgba(0,0,0,0.1);
-            display: none;
-            z-index: 100;
-            transition: all 0.3s;
-        }
-
-        .sidebar-expand-btn:hover {
-            padding-right: 10px;
-        }
-
-        .validation-sidebar.collapsed + .sidebar-expand-btn {
-            display: block;
-        }
-
-        /* Spreadsheet container */
-        .spreadsheet-wrapper {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .spreadsheet-container {
-            flex: 1;
-            overflow: auto;
-            background: white;
-            position: relative;
-        }
-
-        .spreadsheet {
-            display: inline-block;
-            min-width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }
-
-        .spreadsheet th,
-        .spreadsheet td {
-            border: 1px solid #d0d7de;
-            padding: 4px 8px;
-            min-width: 80px;
-            height: 25px;
-            position: relative;
-        }
-
-        .spreadsheet th {
-            background: #f6f8fa;
-            font-weight: 500;
-            text-align: center;
-            user-select: none;
-            position: sticky;
-            z-index: 10;
-        }
-
-        .spreadsheet th.row-header {
-            width: 50px;
-            min-width: 50px;
-            left: 0;
-            z-index: 11;
-        }
-
-        .spreadsheet thead th {
-            top: 0;
-            z-index: 11;
-        }
-
-        .spreadsheet thead th:first-child {
-            z-index: 12;
-        }
-
-        .spreadsheet td {
-            background: white;
-            cursor: cell;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .spreadsheet td.selected {
-            outline: 2px solid #0066cc;
-            outline-offset: -1px;
-            background: #e6f3ff !important;
-        }
-
-        .spreadsheet td.validation-linked {
-            background: #fffbf0;
-        }
-
-        .spreadsheet td.validation-linked.selected {
-            background: #e6f3ff !important;
-        }
-
-        .spreadsheet td.formula-cell {
-            color: #0066cc;
-        }
-
-        .spreadsheet td.error-cell {
-            color: #d73a49;
-            background: #ffebe9;
-        }
-
-        /* Sheet tabs */
-        .sheet-tabs-container {
-            background: #f8f9fa;
-            border-top: 1px solid #ddd;
-            padding: 0;
-            display: flex;
-            align-items: flex-end;
-            overflow-x: auto;
-            height: 35px;
-            flex-shrink: 0;
-        }
-
-        .sheet-tab {
-            padding: 8px 20px;
-            background: white;
-            border: 1px solid #ddd;
-            border-bottom: none;
-            cursor: pointer;
-            margin-right: 2px;
-            min-width: 100px;
-            text-align: center;
-            transition: all 0.2s;
-            font-size: 13px;
-        }
-
-        .sheet-tab:hover {
-            background: #e9ecef;
-        }
-
-        .sheet-tab.active {
-            background: white;
-            border-top: 2px solid #0066cc;
-            font-weight: 600;
-        }
-
-        /* Status bar */
-        .status-bar {
-            background: #f8f9fa;
-            padding: 5px 20px;
-            border-top: 1px solid #ddd;
-            font-size: 12px;
-            display: flex;
-            justify-content: space-between;
-            flex-shrink: 0;
-        }
-
-        .calculation-status {
-            display: flex;
-            gap: 20px;
-        }
-
-        .calc-item {
-            display: flex;
-            gap: 5px;
-        }
-
-        .calc-label {
-            font-weight: 600;
-        }
-
-        /* Loading overlay */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-        }
-
-        .loading-overlay.active {
-            display: flex;
-        }
-
-        .loading-spinner {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #0066cc;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* Empty state */
-        .empty-state {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            padding: 40px;
-        }
-
-        .empty-state h2 {
-            color: #666;
-            margin-bottom: 10px;
-        }
-
-        .empty-state p {
-            color: #999;
-            margin-bottom: 20px;
-        }
-
-        /* Sync indicator */
-        .sync-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 4px 8px;
-            background: #e8f5e9;
-            border-radius: 4px;
-            font-size: 11px;
-            color: #2e7d32;
-            margin-left: 10px;
-        }
-
-        .sync-indicator.syncing {
-            background: #fff3e0;
-            color: #f57c00;
-        }
-
-        .sync-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: currentColor;
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-    </style>
+    
+    <!-- External CSS -->
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/spreadsheet.css">
+    <link rel="stylesheet" href="css/validation.css">
 </head>
 <body>
     <!-- Loading Overlay -->
@@ -569,269 +27,109 @@
                 <option value="">Select Workbook</option>
             </select>
             <span id="lastSaved">Last saved: Never</span>
-            <button onclick="saveChanges()" style="padding: 5px 15px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                💾 Save Changes
+            <button onclick="ExcelDashboard.saveChanges()" class="btn-save">
+                💾 Save
             </button>
         </div>
     </div>
 
-    <!-- Toolbar -->
+    <!-- Toolbar with Validation Controls -->
     <div class="toolbar">
-        <button onclick="refreshData()" title="Refresh" id="refreshBtn">🔄 Refresh</button>
-        <button onclick="recalculate()" title="Recalculate" id="recalcBtn">📊 Recalculate</button>
-        <button onclick="exportExcel()" title="Export to Excel" id="exportBtn">📥 Export</button>
-        <button onclick="toggleFormulas()" id="formulaToggle" title="Show Formulas">ƒx Formulas</button>
-        <button onclick="autoFitColumns()" title="Auto-fit Columns">↔️ Auto-fit</button>
-        <button onclick="toggleSidebar()" title="Toggle Validation Panel">📋 Validations</button>
-        <span style="margin-left: auto; font-size: 12px; color: #666;">
-            <span id="cellCount">0 cells</span> | 
+        <!-- Action Buttons Group -->
+        <div class="toolbar-group">
+            <button onclick="ExcelDashboard.refreshData()" title="Refresh">🔄 Refresh</button>
+            <button onclick="ExcelDashboard.recalculate()" title="Recalculate">📊 Recalculate</button>
+            <button onclick="ExcelDashboard.exportExcel()" title="Export to Excel">📥 Export</button>
+            <button onclick="ExcelDashboard.toggleFormulas()" id="formulaToggle" title="Show Formulas">ƒx Formulas</button>
+        </div>
+        
+        <!-- Validation Controls Group -->
+        <div class="toolbar-group">
+            <!-- D4: Aircraft Type -->
+            <div class="validation-control">
+                <label class="validation-label">Aircraft Type (D4):</label>
+                <select id="d4Select" class="validation-select" onchange="ExcelDashboard.onD4Change(this.value)">
+                    <option value="">Loading...</option>
+                </select>
+            </div>
+            
+            <!-- D5: Aircraft Registration -->
+            <div class="validation-control">
+                <label class="validation-label">Registration (D5):</label>
+                <select id="d5Select" class="validation-select" onchange="ExcelDashboard.onD5Change(this.value)">
+                    <option value="">Loading...</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- Statistics -->
+        <div class="toolbar-stats">
+            <span id="cellCount">0 cells</span>
             <span id="formulaCount">0 formulas</span>
-            <span class="sync-indicator" id="syncIndicator">
-                <span class="sync-dot"></span>
+            <span class="sync-status" id="syncStatus">
+                <span>●</span>
                 <span>Synced</span>
             </span>
-        </span>
+        </div>
     </div>
 
     <!-- Formula Bar -->
     <div class="formula-bar">
         <div class="cell-reference" id="cellReference">A1</div>
-        <span>ƒx</span>
+        <span class="formula-fx">ƒx</span>
         <input type="text" class="formula-input" id="formulaInput" placeholder="Enter formula or value">
     </div>
 
     <!-- Main Content Area -->
     <div class="main-content">
-        <!-- Validation Sidebar -->
-        <div class="validation-sidebar" id="validationSidebar">
-            <div class="sidebar-header">
-                <h2>
-                    <span>📋</span>
-                    Data Validation Controls
-                </h2>
-                <div class="sidebar-toggle" onclick="toggleSidebar()">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M3 5h14v2H3zm0 4h14v2H3zm0 4h14v2H3z"/>
-                    </svg>
-                </div>
+        <!-- Spreadsheet Container -->
+        <div class="spreadsheet-container" id="spreadsheetContainer">
+            <div class="empty-state" id="emptyState">
+                <h2>No Data Available</h2>
+                <p>Select a workbook from the dropdown above or check your database connection</p>
+                <button onclick="location.reload()">Retry Connection</button>
             </div>
-            
-            <div class="sidebar-content" id="sidebarContent">
-                <!-- D4 and D5 validation controls will be populated here -->
-                <div class="validation-group">
-                    <div class="validation-group-header">
-                        📋 Primary Controls
-                    </div>
-                    <div class="validation-item">
-                        <div class="validation-label">
-                            <span class="validation-label-text">Loading...</span>
-                            <span class="validation-cell-ref">D4</span>
-                        </div>
-                    </div>
-                    <div class="validation-item">
-                        <div class="validation-label">
-                            <span class="validation-label-text">Loading...</span>
-                            <span class="validation-cell-ref">D5</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="quick-actions">
-                <button onclick="clearAllValidations()">Clear All</button>
-                <button onclick="applyAllValidations()">Apply All</button>
-            </div>
+            <table class="spreadsheet" id="spreadsheet" style="display: none;">
+                <thead id="spreadsheetHeader">
+                    <!-- Column headers will be generated dynamically -->
+                </thead>
+                <tbody id="spreadsheetBody">
+                    <!-- Rows will be generated dynamically -->
+                </tbody>
+            </table>
         </div>
+    </div>
 
-        <!-- Sidebar Expand Button (shown when collapsed) -->
-        <div class="sidebar-expand-btn" onclick="toggleSidebar()">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M6 12L10 8L6 4z"/>
-            </svg>
-        </div>
-
-        <!-- Spreadsheet Wrapper -->
-        <div class="spreadsheet-wrapper">
-            <!-- Spreadsheet Container -->
-            <div class="spreadsheet-container" id="spreadsheetContainer">
-                <div class="empty-state" id="emptyState">
-                    <h2>No Data Available</h2>
-                    <p>Select a workbook from the dropdown above or check your database connection</p>
-                    <button onclick="location.reload()">Retry Connection</button>
-                </div>
-                <table class="spreadsheet" id="spreadsheet" style="display: none;">
-                    <thead id="spreadsheetHeader">
-                        <!-- Column headers will be generated -->
-                    </thead>
-                    <tbody id="spreadsheetBody">
-                        <!-- Rows will be generated -->
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Sheet Tabs -->
-            <div class="sheet-tabs-container" id="sheetTabs">
-                <!-- Sheet tabs will be generated -->
-            </div>
-        </div>
+    <!-- Sheet Tabs -->
+    <div class="sheet-tabs-container" id="sheetTabs">
+        <!-- Sheet tabs will be generated dynamically -->
     </div>
 
     <!-- Status Bar -->
     <div class="status-bar">
-        <div class="calculation-status">
-            <div class="calc-item">
-                <span class="calc-label">SUM:</span>
-                <span id="sumValue">0</span>
-            </div>
-            <div class="calc-item">
-                <span class="calc-label">AVG:</span>
-                <span id="avgValue">0</span>
-            </div>
-            <div class="calc-item">
-                <span class="calc-label">COUNT:</span>
-                <span id="countValue">0</span>
-            </div>
+        <div class="status-message">
+            <span id="statusMessage">Ready</span>
         </div>
         <div>
-            <span id="calculationMode">Ready</span>
+            <span id="calculationMode">Automatic</span>
         </div>
     </div>
 
-    <!-- Load Scripts -->
+    <!-- External JavaScript -->
     <script src="js/excel-engine.js"></script>
     <script src="js/formula-parser.js"></script>
-    <script src="js/dashboard-sidebar.js"></script>
+    <script src="js/validation-manager.js"></script>
+    <script src="js/dashboard-main.js"></script>
     
+    <!-- Initialize Dashboard -->
     <script>
-        // Initialize dashboard with sidebar support
+        // Initialize when DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded, initializing dashboard with sidebar...');
-            
-            // Check if scripts loaded
-            if (typeof ExcelDashboard === 'undefined') {
-                console.error('Dashboard scripts failed to load');
-                // Try to show an error message
-                const overlay = document.getElementById('loadingOverlay');
-                if (overlay) {
-                    const text = document.getElementById('loadingText');
-                    if (text) {
-                        text.textContent = 'Error: Dashboard scripts failed to load. Please refresh the page.';
-                    }
-                }
-                return;
-            }
-            
-            try {
-                // Initialize the main dashboard
+            console.log('Initializing Excel Dashboard...');
+            if (typeof ExcelDashboard !== 'undefined') {
                 ExcelDashboard.init();
-                
-                // Initialize sidebar after a delay to ensure data is loaded
-                setTimeout(() => {
-                    try {
-                        ExcelDashboard.initializeValidationSidebar();
-                    } catch (error) {
-                        console.warn('Sidebar initialization error (non-critical):', error);
-                    }
-                }, 2000);
-                
-            } catch (error) {
-                console.error('Failed to initialize dashboard:', error);
-                // Hide loading overlay even on error
-                const overlay = document.getElementById('loadingOverlay');
-                if (overlay) {
-                    overlay.style.display = 'none';
-                }
-            }
-        });
-
-        // Global functions
-        function toggleSidebar() {
-            const sidebar = document.getElementById('validationSidebar');
-            sidebar.classList.toggle('collapsed');
-            
-            // Save preference
-            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
-            
-            // Trigger resize event for spreadsheet adjustment
-            window.dispatchEvent(new Event('resize'));
-        }
-
-        function clearAllValidations() {
-            if (confirm('Clear all validation selections?')) {
-                document.querySelectorAll('.validation-select').forEach(select => {
-                    select.value = '';
-                    // Trigger change event
-                    select.dispatchEvent(new Event('change'));
-                });
-            }
-        }
-
-        function applyAllValidations() {
-            const validations = {};
-            document.querySelectorAll('.validation-select').forEach(select => {
-                const cellAddress = select.dataset.cellAddress;
-                if (cellAddress && select.value) {
-                    validations[cellAddress] = select.value;
-                }
-            });
-            
-            if (Object.keys(validations).length > 0) {
-                ExcelDashboard.applyBulkValidations(validations);
-            }
-        }
-
-        function saveChanges() {
-            if (window.ExcelDashboard) {
-                window.ExcelDashboard.saveChanges();
-            }
-        }
-
-        function refreshData() {
-            if (window.ExcelDashboard) {
-                window.ExcelDashboard.refreshData();
-            }
-        }
-
-        function recalculate() {
-            if (window.ExcelDashboard) {
-                window.ExcelDashboard.recalculate();
-            }
-        }
-
-        function exportExcel() {
-            if (window.ExcelDashboard) {
-                window.ExcelDashboard.exportExcel();
-            }
-        }
-
-        function toggleFormulas() {
-            if (window.ExcelDashboard) {
-                window.ExcelDashboard.toggleFormulas();
-            }
-        }
-
-        function autoFitColumns() {
-            if (window.ExcelDashboard) {
-                window.ExcelDashboard.autoFitColumns();
-            }
-        }
-
-        // Restore sidebar state
-        window.addEventListener('load', function() {
-            const collapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-            if (collapsed) {
-                document.getElementById('validationSidebar').classList.add('collapsed');
-            }
-        });
-        
-        // Error handler for uncaught errors
-        window.addEventListener('error', function(event) {
-            console.error('Global error:', event.error);
-            // Hide loading overlay on any error
-            const overlay = document.getElementById('loadingOverlay');
-            if (overlay && overlay.classList.contains('active')) {
-                overlay.style.display = 'none';
-                overlay.classList.remove('active');
+            } else {
+                console.error('ExcelDashboard not loaded. Check that all JavaScript files are properly loaded.');
             }
         });
     </script>

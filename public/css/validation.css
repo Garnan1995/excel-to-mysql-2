@@ -1,0 +1,260 @@
+/* css/validation.css - Validation Controls and Dropdown Styles */
+
+/* Validation Controls in Toolbar */
+.validation-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.validation-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    min-width: 100px;
+    white-space: nowrap;
+}
+
+.validation-select {
+    padding: 5px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 13px;
+    min-width: 200px;
+    max-width: 250px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.validation-select:hover {
+    border-color: #0066cc;
+    background: #f8f9fa;
+}
+
+.validation-select:focus {
+    outline: none;
+    border-color: #0066cc;
+    box-shadow: 0 0 0 2px rgba(0,102,204,0.1);
+}
+
+.validation-select:disabled {
+    background: #f5f5f5;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Validation Indicator */
+.validation-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #28a745;
+    margin-left: 5px;
+    animation: pulse-indicator 2s infinite;
+}
+
+@keyframes pulse-indicator {
+    0%, 100% { 
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% { 
+        opacity: 0.5;
+        transform: scale(0.8);
+    }
+}
+
+/* Dropdown Arrow for Validation Cells */
+.dropdown-arrow {
+    position: absolute;
+    right: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    color: #666;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.spreadsheet td.has-validation:hover .dropdown-arrow {
+    color: #0066cc;
+}
+
+/* Custom Dropdown (if using custom dropdown instead of select) */
+.validation-dropdown {
+    position: fixed;
+    background: white;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    max-height: 250px;
+    overflow-y: auto;
+    z-index: 10000;
+    min-width: 200px;
+    border-radius: 4px;
+    display: none;
+}
+
+.validation-dropdown.active {
+    display: block;
+}
+
+.validation-dropdown-item {
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: background-color 0.1s;
+    font-size: 13px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.validation-dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.validation-dropdown-item:hover {
+    background-color: #f0f0f0;
+}
+
+.validation-dropdown-item.selected {
+    background-color: #e3f2fd;
+    font-weight: 600;
+}
+
+.validation-dropdown-item.disabled {
+    color: #999;
+    cursor: not-allowed;
+    background-color: #fafafa;
+}
+
+.validation-dropdown-loading {
+    padding: 10px;
+    color: #666;
+    text-align: center;
+    font-style: italic;
+}
+
+.validation-dropdown-empty {
+    padding: 10px;
+    color: #999;
+    font-style: italic;
+    text-align: center;
+}
+
+/* Search Input for Large Validation Lists */
+.validation-search {
+    width: 100%;
+    padding: 8px 10px;
+    border: none;
+    border-bottom: 2px solid #e0e0e0;
+    font-size: 13px;
+    background: #f8f9fa;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.validation-search:focus {
+    outline: none;
+    border-bottom-color: #0066cc;
+    background: white;
+}
+
+/* Validation Error States */
+.validation-error {
+    border-color: #dc3545 !important;
+    background-color: #fff5f5 !important;
+}
+
+.validation-error-message {
+    color: #dc3545;
+    font-size: 11px;
+    margin-top: 4px;
+    display: block;
+}
+
+/* Validation Success States */
+.validation-success {
+    border-color: #28a745 !important;
+    background-color: #f0fff4 !important;
+}
+
+/* Linked Cell Indicators */
+.linked-indicator {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 6px;
+    height: 6px;
+    background: #0066cc;
+    border-radius: 50%;
+    opacity: 0.8;
+}
+
+/* Validation Groups (for sidebar if used) */
+.validation-group {
+    margin-bottom: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid #e0e0e0;
+}
+
+.validation-group-header {
+    font-size: 12px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.validation-item {
+    margin-bottom: 10px;
+}
+
+.validation-item:last-child {
+    margin-bottom: 0;
+}
+
+/* Quick Actions for Validation */
+.validation-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.validation-actions button {
+    flex: 1;
+    padding: 4px 8px;
+    font-size: 11px;
+    border: 1px solid #ddd;
+    background: white;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.validation-actions button:hover {
+    background: #0066cc;
+    color: white;
+    border-color: #0066cc;
+}
+
+/* Validation Highlighting */
+.highlight-validation {
+    animation: blink-validation 0.5s ease 3;
+}
+
+@keyframes blink-validation {
+    0%, 100% {
+        background-color: inherit;
+    }
+    50% {
+        background-color: #fff3cd;
+    }
+}
