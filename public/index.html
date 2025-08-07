@@ -77,6 +77,11 @@
             color: white;
         }
 
+        .toolbar button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .formula-bar {
             background: white;
             padding: 8px 20px;
@@ -147,7 +152,7 @@
             top: 130px;
             left: 0;
             right: 0;
-            bottom: 35px;
+            bottom: 70px;
             overflow: auto;
             background: white;
         }
@@ -204,7 +209,7 @@
         .spreadsheet td.selected {
             outline: 2px solid #0066cc;
             outline-offset: -1px;
-            background: #e6f3ff;
+            background: #e6f3ff !important;
         }
 
         .spreadsheet td.formula-cell {
@@ -214,6 +219,19 @@
         .spreadsheet td.error-cell {
             color: #d73a49;
             background: #ffebe9;
+        }
+
+        .spreadsheet td.has-validation {
+            background-color: #f5f5f5;
+            cursor: pointer;
+        }
+
+        .spreadsheet td.has-validation:hover {
+            background-color: #e8e8e8 !important;
+        }
+
+        .spreadsheet td.has-validation.selected {
+            background-color: #e6f3ff !important;
         }
 
         .spreadsheet td input {
@@ -242,10 +260,14 @@
             right: 0;
             bottom: 0;
             background: rgba(0,0,0,0.5);
-            display: flex;
+            display: none;
             align-items: center;
             justify-content: center;
             z-index: 9999;
+        }
+
+        .loading-overlay.active {
+            display: flex;
         }
 
         .loading-spinner {
@@ -268,31 +290,6 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
-        }
-
-        /* Dropdown selector */
-        .dropdown-selector {
-            position: absolute;
-            background: white;
-            border: 1px solid #ddd;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            max-height: 200px;
-            overflow-y: auto;
-            z-index: 1000;
-            display: none;
-        }
-
-        .dropdown-selector.active {
-            display: block;
-        }
-
-        .dropdown-option {
-            padding: 5px 10px;
-            cursor: pointer;
-        }
-
-        .dropdown-option:hover {
-            background: #f0f2f5;
         }
 
         /* Status bar */
@@ -322,6 +319,225 @@
         .calc-label {
             font-weight: 600;
         }
+
+        /* Empty state */
+        .empty-state {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            padding: 40px;
+        }
+
+        .empty-state h2 {
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            color: #999;
+            margin-bottom: 20px;
+        }
+
+        .empty-state button {
+            padding: 10px 20px;
+            background: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        /* Validation indicator */
+        .validation-indicator {
+            position: absolute;
+            right: 2px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 10px;
+            color: #666;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        /* Floating Validation Panel - NEW */
+        .validation-panel {
+            position: fixed;
+            right: 20px;
+            top: 150px;
+            width: 300px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            display: none;
+            max-height: 500px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .validation-panel.active {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .validation-panel-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 15px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: move;
+        }
+
+        .validation-panel-close {
+            cursor: pointer;
+            font-size: 20px;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+
+        .validation-panel-close:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .validation-panel-body {
+            padding: 15px;
+        }
+
+        .validation-cell-info {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .validation-cell-label {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .validation-cell-value {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .validation-search {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .validation-search:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102,126,234,0.1);
+        }
+
+        .validation-options {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+        }
+
+        .validation-option {
+            padding: 10px 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+        }
+
+        .validation-option:last-child {
+            border-bottom: none;
+        }
+
+        .validation-option:hover {
+            background: #f0f7ff;
+        }
+
+        .validation-option.selected {
+            background: #e3f2fd;
+            font-weight: bold;
+        }
+
+        .validation-loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .validation-empty {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+            font-style: italic;
+        }
+
+        .validation-minimize {
+            position: fixed;
+            right: 20px;
+            top: 150px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            display: none;
+            z-index: 999;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .validation-minimize:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .validation-minimize.active {
+            display: block;
+        }
+
+        /* Highlight validation cells */
+        .validation-highlight {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: inset 0 0 0 2px rgba(102,126,234,0.3);
+            }
+            50% {
+                box-shadow: inset 0 0 0 2px rgba(102,126,234,0.6);
+            }
+        }
     </style>
 </head>
 <body>
@@ -329,8 +545,31 @@
     <div id="loadingOverlay" class="loading-overlay">
         <div class="loading-spinner">
             <div class="spinner"></div>
-            <div>Loading spreadsheet data...</div>
+            <div id="loadingText">Loading spreadsheet data...</div>
         </div>
+    </div>
+
+    <!-- Floating Validation Panel -->
+    <div id="validationPanel" class="validation-panel">
+        <div class="validation-panel-header" id="validationPanelHeader">
+            <span>Select Value for <span id="validationCellAddress">--</span></span>
+            <span class="validation-panel-close" onclick="closeValidationPanel()">×</span>
+        </div>
+        <div class="validation-panel-body">
+            <div class="validation-cell-info">
+                <div class="validation-cell-label">Current Value:</div>
+                <div class="validation-cell-value" id="currentCellValue">--</div>
+            </div>
+            <input type="text" class="validation-search" id="validationSearch" placeholder="Search options...">
+            <div class="validation-options" id="validationOptions">
+                <div class="validation-loading">Loading options...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Minimized Panel Button -->
+    <div id="validationMinimize" class="validation-minimize" onclick="restoreValidationPanel()">
+        📋 Validation Panel
     </div>
 
     <!-- Header -->
@@ -349,9 +588,9 @@
 
     <!-- Toolbar -->
     <div class="toolbar">
-        <button onclick="refreshData()" title="Refresh">🔄 Refresh</button>
-        <button onclick="recalculate()" title="Recalculate">📊 Recalculate</button>
-        <button onclick="exportExcel()" title="Export to Excel">📥 Export</button>
+        <button onclick="refreshData()" title="Refresh" id="refreshBtn">🔄 Refresh</button>
+        <button onclick="recalculate()" title="Recalculate" id="recalcBtn">📊 Recalculate</button>
+        <button onclick="exportExcel()" title="Export to Excel" id="exportBtn">📥 Export</button>
         <button onclick="toggleFormulas()" id="formulaToggle" title="Show Formulas">ƒx Formulas</button>
         <button onclick="autoFitColumns()" title="Auto-fit Columns">↔️ Auto-fit</button>
         <span style="margin-left: auto; font-size: 12px; color: #666;">
@@ -369,7 +608,12 @@
 
     <!-- Spreadsheet Container -->
     <div class="spreadsheet-container" id="spreadsheetContainer">
-        <table class="spreadsheet" id="spreadsheet">
+        <div class="empty-state" id="emptyState">
+            <h2>No Data Available</h2>
+            <p>Select a workbook from the dropdown above or check your database connection</p>
+            <button onclick="location.reload()">Retry Connection</button>
+        </div>
+        <table class="spreadsheet" id="spreadsheet" style="display: none;">
             <thead id="spreadsheetHeader">
                 <!-- Column headers will be generated -->
             </thead>
@@ -405,17 +649,322 @@
         <!-- Sheet tabs will be generated -->
     </div>
 
-    <!-- Dropdown Selector for Data Validation -->
-    <div id="dropdownSelector" class="dropdown-selector"></div>
-
+    <!-- Load Scripts -->
     <script src="js/excel-engine.js"></script>
     <script src="js/formula-parser.js"></script>
-    <script src="js/dashboard.js"></script>
+    <script src="js/dashboard-final.js"></script>
+    
+    <!-- Validation Panel Script -->
     <script>
-        // Initialize the dashboard
-        document.addEventListener('DOMContentLoaded', function() {
-            ExcelDashboard.init();
+        // Validation Panel Management
+        let currentValidationCell = null;
+        let currentValidationFormula = null;
+        let validationOptions = [];
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
+
+        // Make panel draggable
+        document.getElementById('validationPanelHeader').addEventListener('mousedown', function(e) {
+            isDragging = true;
+            const panel = document.getElementById('validationPanel');
+            const rect = panel.getBoundingClientRect();
+            dragOffset.x = e.clientX - rect.left;
+            dragOffset.y = e.clientY - rect.top;
+            panel.style.cursor = 'grabbing';
         });
+
+        document.addEventListener('mousemove', function(e) {
+            if (isDragging) {
+                const panel = document.getElementById('validationPanel');
+                panel.style.left = (e.clientX - dragOffset.x) + 'px';
+                panel.style.top = (e.clientY - dragOffset.y) + 'px';
+                panel.style.right = 'auto';
+            }
+        });
+
+        document.addEventListener('mouseup', function() {
+            if (isDragging) {
+                isDragging = false;
+                document.getElementById('validationPanel').style.cursor = '';
+            }
+        });
+
+        // Open validation panel for a cell
+        window.openValidationPanel = function(cellElement, cellAddress, formula) {
+            console.log('Opening validation panel for', cellAddress);
+            
+            currentValidationCell = { element: cellElement, address: cellAddress };
+            currentValidationFormula = formula;
+            
+            // Update panel header
+            document.getElementById('validationCellAddress').textContent = cellAddress;
+            document.getElementById('currentCellValue').textContent = cellElement.textContent || '(empty)';
+            
+            // Show panel
+            const panel = document.getElementById('validationPanel');
+            panel.classList.add('active');
+            document.getElementById('validationMinimize').classList.remove('active');
+            
+            // Clear search
+            document.getElementById('validationSearch').value = '';
+            
+            // Load options
+            loadValidationOptions(formula, cellElement.textContent);
+        };
+
+        // Close validation panel
+        window.closeValidationPanel = function() {
+            document.getElementById('validationPanel').classList.remove('active');
+            currentValidationCell = null;
+            currentValidationFormula = null;
+            validationOptions = [];
+        };
+
+        // Minimize/Restore panel
+        window.minimizeValidationPanel = function() {
+            document.getElementById('validationPanel').classList.remove('active');
+            document.getElementById('validationMinimize').classList.add('active');
+        };
+
+        window.restoreValidationPanel = function() {
+            if (currentValidationCell) {
+                document.getElementById('validationPanel').classList.add('active');
+                document.getElementById('validationMinimize').classList.remove('active');
+            }
+        };
+
+        // Load validation options
+        function loadValidationOptions(formula, currentValue) {
+            const optionsDiv = document.getElementById('validationOptions');
+            optionsDiv.innerHTML = '<div class="validation-loading">Loading options...</div>';
+            
+            // Parse formula
+            const match = formula.match(/^'([^']+)'!\$?([A-Z]+)\$?(\d+):\$?([A-Z]+)\$?(\d+)$/);
+            if (!match) {
+                optionsDiv.innerHTML = '<div class="validation-empty">Invalid formula format</div>';
+                return;
+            }
+            
+            const sheetName = match[1];
+            const startCol = match[2].charCodeAt(0) - 64;
+            const startRow = parseInt(match[3]);
+            const endCol = match[4].charCodeAt(0) - 64;
+            const endRow = parseInt(match[5]);
+            
+            const workbookId = (window.ExcelDashboard && window.ExcelDashboard.currentWorkbook) || 1;
+            
+            // Fetch data
+            fetch('api/excel-api.php?action=worksheets&workbook_id=' + workbookId)
+                .then(r => r.json())
+                .then(worksheets => {
+                    const sheet = worksheets.find(ws => 
+                        ws.sheet_name.trim() === sheetName || 
+                        ws.sheet_name.includes(sheetName)
+                    );
+                    
+                    if (!sheet) throw new Error('Sheet not found: ' + sheetName);
+                    
+                    return fetch(
+                        `api/excel-api.php?action=cell-range&worksheet_id=${sheet.id}` +
+                        `&start_row=${startRow}&end_row=${endRow}` +
+                        `&start_col=${startCol}&end_col=${endCol}`
+                    );
+                })
+                .then(r => r.json())
+                .then(data => {
+                    validationOptions = [];
+                    if (data.cells) {
+                        data.cells.forEach(cell => {
+                            if (cell.cell_value !== null && cell.cell_value !== '') {
+                                const value = String(cell.cell_value).trim();
+                                if (value && !validationOptions.includes(value)) {
+                                    validationOptions.push(value);
+                                }
+                            }
+                        });
+                    }
+                    
+                    displayValidationOptions(validationOptions, currentValue);
+                })
+                .catch(error => {
+                    console.error('Error loading options:', error);
+                    optionsDiv.innerHTML = '<div class="validation-empty">Error loading options</div>';
+                });
+        }
+
+        // Display validation options
+        function displayValidationOptions(options, currentValue) {
+            const optionsDiv = document.getElementById('validationOptions');
+            
+            if (options.length === 0) {
+                optionsDiv.innerHTML = '<div class="validation-empty">No options available</div>';
+                return;
+            }
+            
+            optionsDiv.innerHTML = '';
+            options.forEach(option => {
+                const div = document.createElement('div');
+                div.className = 'validation-option';
+                if (option === currentValue) {
+                    div.classList.add('selected');
+                }
+                div.textContent = option;
+                div.onclick = () => selectValidationOption(option);
+                optionsDiv.appendChild(div);
+            });
+        }
+
+        // Filter options based on search
+        document.getElementById('validationSearch').addEventListener('input', function(e) {
+            const search = e.target.value.toLowerCase();
+            const filtered = validationOptions.filter(opt => 
+                opt.toLowerCase().includes(search)
+            );
+            const currentValue = currentValidationCell ? 
+                currentValidationCell.element.textContent : '';
+            displayValidationOptions(filtered, currentValue);
+        });
+
+        // Select an option
+        function selectValidationOption(value) {
+            if (!currentValidationCell) return;
+            
+            const cell = currentValidationCell.element;
+            const address = currentValidationCell.address;
+            
+            // Update cell value
+            cell.textContent = value;
+            
+            // Update current value display
+            document.getElementById('currentCellValue').textContent = value;
+            
+            // Highlight selected option
+            document.querySelectorAll('.validation-option').forEach(opt => {
+                opt.classList.toggle('selected', opt.textContent === value);
+            });
+            
+            // Save if dashboard is available
+            if (window.ExcelDashboard && window.ExcelDashboard.saveCell) {
+                window.ExcelDashboard.saveCell(address, value, cell);
+            }
+            
+            // Flash the cell to show it was updated
+            cell.style.transition = 'background-color 0.3s';
+            const originalBg = cell.style.backgroundColor;
+            cell.style.backgroundColor = '#90EE90';
+            setTimeout(() => {
+                cell.style.backgroundColor = originalBg;
+            }, 300);
+        }
+
+        // Setup validation cells
+        window.setupValidationCells = function() {
+            console.log('Setting up validation cells with panel...');
+            
+            const validationCells = {
+                'D4': "'Standar Jumlah'!$B$5:$B$83",
+                'E4': "'Standar Jumlah'!$B$5:$B$83",
+                'F4': "'Standar Jumlah'!$B$5:$B$83",
+                'D5': "'List Aircraft'!$R$3:$R$42",
+                'E5': "'List Aircraft'!$R$3:$R$42",
+                'F5': "'List Aircraft'!$R$3:$R$42"
+            };
+            
+            Object.entries(validationCells).forEach(([address, formula]) => {
+                const cell = document.querySelector(`[data-address="${address}"]`);
+                if (cell) {
+                    // Add validation class
+                    cell.classList.add('has-validation');
+                    cell.classList.add('validation-highlight');
+                    
+                    // Add indicator
+                    if (!cell.querySelector('.validation-indicator')) {
+                        cell.style.position = 'relative';
+                        const indicator = document.createElement('span');
+                        indicator.className = 'validation-indicator';
+                        indicator.innerHTML = '▼';
+                        cell.appendChild(indicator);
+                    }
+                    
+                    // Single click to open panel
+                    cell.onclick = function(e) {
+                        e.stopPropagation();
+                        openValidationPanel(cell, address, formula);
+                    };
+                    
+                    console.log('✓ Setup validation for', address);
+                }
+            });
+        };
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing dashboard...');
+            
+            if (typeof ExcelDashboard === 'undefined') {
+                console.error('Dashboard scripts failed to load');
+                return;
+            }
+            
+            try {
+                ExcelDashboard.init();
+            } catch (error) {
+                console.error('Failed to initialize dashboard:', error);
+            }
+        });
+
+        // Setup validation cells after dashboard loads
+        let setupAttempts = 0;
+        const trySetup = () => {
+            setupAttempts++;
+            const d4 = document.querySelector('[data-address="D4"]');
+            
+            if (d4 && d4.textContent) {
+                console.log('Spreadsheet loaded, setting up validation cells...');
+                window.setupValidationCells();
+            } else if (setupAttempts < 10) {
+                setTimeout(trySetup, 1000);
+            }
+        };
+        
+        setTimeout(trySetup, 2000);
+
+        // Global functions for buttons
+        function saveChanges() {
+            if (window.ExcelDashboard) {
+                window.ExcelDashboard.saveChanges();
+            }
+        }
+
+        function refreshData() {
+            if (window.ExcelDashboard) {
+                window.ExcelDashboard.refreshData();
+            }
+        }
+
+        function recalculate() {
+            if (window.ExcelDashboard) {
+                window.ExcelDashboard.recalculate();
+            }
+        }
+
+        function exportExcel() {
+            if (window.ExcelDashboard) {
+                window.ExcelDashboard.exportExcel();
+            }
+        }
+
+        function toggleFormulas() {
+            if (window.ExcelDashboard) {
+                window.ExcelDashboard.toggleFormulas();
+            }
+        }
+
+        function autoFitColumns() {
+            if (window.ExcelDashboard) {
+                window.ExcelDashboard.autoFitColumns();
+            }
+        }
     </script>
 </body>
 </html>

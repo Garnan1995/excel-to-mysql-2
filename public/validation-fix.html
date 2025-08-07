@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Excel Validation Dropdown Solution</title>
+    <style>
+        /* Dropdown styles */
+        .excel-dropdown {
+            position: fixed;
+            background: white;
+            border: 1px solid #0066cc;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 10000;
+            min-width: 250px;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .excel-dropdown.active {
+            display: block;
+        }
+        
+        .dropdown-header {
+            background: #f0f0f0;
+            padding: 8px 10px;
+            border-bottom: 1px solid #ddd;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .dropdown-option {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.2s;
+        }
+        
+        .dropdown-option:hover {
+            background: #e3f2fd;
+        }
+        
+        .dropdown-option.selected {
+            background: #bbdefb;
+            font-weight: bold;
+        }
+        
+        .dropdown-search {
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .dropdown-search input {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        
+        /* Visual indicator for cells with validation */
+        td.has-dropdown {
+            background-color: #fffbf0 !important;
+            cursor: pointer;
+        }
+        
+        td.has-dropdown::after {
+            content: '▼';
+            position: absolute;
+            right: 2px;
+            top: 2px;
+            font-size: 10px;
+            color: #666;
+        }
+        
+        /* Control panel */
+        .validation-control {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: white;
+            padding: 15px;
+            border: 2px solid #0066cc;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 9999;
+            max-width: 300px;
+        }
+        
+        .validation-control h3 {
+            margin: 0 0 10px 0;
+            color: #0066cc;
+        }
+        
+        .validation-control button {
+            display: block;
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            background: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .validation-control button:hover {
+            background: #0052a3;
+        }
+        
+        .validation-control .status {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Dropdown Container -->
+<div id="excelDropdown" class="excel-dropdown">
+    <div class="dropdown-header">Select an option</div>
+    <div class="dropdown-search">
+        <input type="text" id="dropdownSearch" placeholder="Search...">
+    </div>
+    <div id="dropdownOptions"></div>
+</div>
+
+<!-- Control Panel -->
+<div class="validation-control">
+    <h3>📊 Excel Validation Control</h3>
+    <button onclick="ValidationManager.setupValidations()">Setup Validations</button>
+    <button onclick="ValidationManager.testD4()">Test D4 Dropdown</button>
+    <button onclick="ValidationManager.testD5()">Test D5 Dropdown</button>
+    <button onclick="ValidationManager.showStatus()">Check Status</button>
+    <div class="status" id="validationStatus">Ready</div>
+</div>
+
+<script>
+// Standalone Validation Manager
+const ValidationManager = {
+    validations: {
+        'D4': {
+            type: 'list',
+            source: "'Standar Jumlah'!$B$5:$B$83",
+            values: null, // Will be fetched
+            description: 'Standar Jumlah List'
+        },
+        'D5': {
+            type: 'list', 
+            source: "'List Aircraft'!$R$3:$R$42",
+            values: null, // Will be fetched
+            description: 'Aircraft List'
+        },
+        'E4': {
+            type: 'list',
+            source: "'Standar Jumlah'!$B$5:$B$83",
+            values: null,
+            description: 'Standar Jumlah List'
+        },
+        'E5': {
+            type: 'list',
+            source: "'List Aircraft'!$R$3:$R$42",
+            values: null,
+            description: 'Aircraft List'
+        },
+        'F4': {
+            type: 'list',
+            source: "'Standar Jumlah'!$B$5:$B$83",
+            values: null,
+            description: 'Standar Jumlah List'
+        },
+        'F5': {
+            type: 'list',
+            source: "'List Aircraft'!$R$3:$R$42",
+            values: null,
+            description: 'Aircraft List'
+        }
+    },
+    
+    currentCell: null,
+    
+    // Initialize validations
+    setupValidations() {
+        console.log('Setting up validations...');
+        this.updateStatus('Setting up validations...');
+        
+        // Find and mark cells with validation
+        Object.keys(this.validations).forEach(cellAddress => {
+            const cell = document.querySelector(`[data-address="${cellAddress}"]`);
+            if (cell) {
+                // Add visual indicator
+                cell.classList.add('has-dropdown');
+                cell.style.position = 'relative';
+                
+                // Override double-click
+                cell.ondblclick = (e) => {
+                    e.stopPropagation();
+                    this.showDropdown(cellAddress);
+                };
+                
+                console.log(`✓ Setup validation for ${cellAddress}`);
+            } else {
+                console.log(`✗ Cell ${cellAddress} not found`);
+            }
+        });
+        
+        // Setup dropdown close handler
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('excelDropdown');
+            if (!dropdown.contains(e.target) && !e.target.classList.contains('has-dropdown')) {
+                this.hideDropdown();
+            }
+        });
+        
+        this.updateStatus('Validations setup complete!');
+    },
+    
+    // Show dropdown for a cell
+    async showDropdown(cellAddress) {
+        console.log(`Showing dropdown for ${cellAddress}`);
+        this.currentCell = cellAddress;
+        
+        const cell = document.querySelector(`[data-address="${cellAddress}"]`);
+        if (!cell) {
+            console.error('Cell not found:', cellAddress);
+            return;
+        }
+        
+        const validation = this.validations[cellAddress];
+        if (!validation) {
+            console.error('No validation for cell:', cellAddress);
+            return;
+        }
+        
+        // Get or fetch values
+        if (!validation.values) {
+            this.updateStatus(`Fetching values for ${cellAddress}...`);
+            validation.values = await this.fetchValues(validation.source);
+        }
+        
+        // Show dropdown
+        const dropdown = document.getElementById('excelDropdown');
+        const optionsContainer = document.getElementById('dropdownOptions');
+        const searchInput = document.getElementById('dropdownSearch');
+        
+        // Set header
+        dropdown.querySelector('.dropdown-header').textContent = 
+            `${cellAddress}: ${validation.description}`;
+        
+        // Clear search
+        searchInput.value = '';
+        
+        // Position dropdown
+        const rect = cell.getBoundingClientRect();
+        dropdown.style.left = rect.left + 'px';
+        dropdown.style.top = (rect.bottom + 2) + 'px';
+        
+        // Populate options
+        this.populateOptions(validation.values, cell.textContent);
+        
+        // Show dropdown
+        dropdown.classList.add('active');
+        
+        // Focus search
+        searchInput.focus();
+        
+        // Setup search
+        searchInput.oninput = () => {
+            const filter = searchInput.value.toLowerCase();
+            const filtered = validation.values.filter(v => 
+                v.toLowerCase().includes(filter)
+            );
+            this.populateOptions(filtered, cell.textContent);
+        };
+        
+        this.updateStatus(`Showing ${validation.values.length} options for ${cellAddress}`);
+    },
+    
+    // Populate dropdown options
+    populateOptions(values, currentValue) {
+        const container = document.getElementById('dropdownOptions');
+        container.innerHTML = '';
+        
+        if (values.length === 0) {
+            container.innerHTML = '<div class="dropdown-option">No options available</div>';
+            return;
+        }
+        
+        values.forEach(value => {
+            const option = document.createElement('div');
+            option.className = 'dropdown-option';
+            if (value === currentValue) {
+                option.classList.add('selected');
+            }
+            option.textContent = value;
+            option.onclick = () => this.selectValue(value);
+            container.appendChild(option);
+        });
+    },
+    
+    // Select a value
+    selectValue(value) {
+        if (!this.currentCell) return;
+        
+        const cell = document.querySelector(`[data-address="${this.currentCell}"]`);
+        if (cell) {
+            // Update cell value
+            cell.textContent = value;
+            
+            // Save to backend if ExcelDashboard exists
+            if (window.ExcelDashboard && window.ExcelDashboard.saveCell) {
+                window.ExcelDashboard.saveCell(this.currentCell, value, cell);
+            }
+            
+            console.log(`Set ${this.currentCell} = ${value}`);
+            this.updateStatus(`Updated ${this.currentCell} to: ${value}`);
+        }
+        
+        this.hideDropdown();
+    },
+    
+    // Hide dropdown
+    hideDropdown() {
+        document.getElementById('excelDropdown').classList.remove('active');
+    },
+    
+    // Fetch values from a range
+    async fetchValues(source) {
+        // For now, return mock data based on source
+        // In production, this would fetch from the API
+        
+        if (source.includes('List Aircraft')) {
+            // Mock aircraft data
+            return [
+                'A320', 'A321', 'A330', 'A340', 'A350', 'A380',
+                'B737', 'B747', 'B757', 'B767', 'B777', 'B787',
+                'CRJ200', 'CRJ700', 'CRJ900', 'CRJ1000',
+                'E170', 'E175', 'E190', 'E195',
+                'ATR42', 'ATR72',
+                'Q300', 'Q400'
+            ];
+        } else if (source.includes('Standar Jumlah')) {
+            // Mock standar jumlah data
+            return [
+                'NB E190 Premium Internasional Main Building',
+                'NB E190 Premium Domestik Main Building',
+                'NB E190 Economy Internasional Main Building',
+                'NB E190 Economy Domestik Main Building',
+                'WB A330 Premium Internasional Main Building',
+                'WB A330 Premium Domestik Main Building',
+                'WB A330 Economy Internasional Main Building',
+                'WB A330 Economy Domestik Main Building',
+                'NB B737 Premium Internasional Main Building',
+                'NB B737 Premium Domestik Main Building',
+                'NB B737 Economy Internasional Main Building',
+                'NB B737 Economy Domestik Main Building'
+            ];
+        }
+        
+        // If we have ExcelDashboard, try to fetch real data
+        if (window.ExcelDashboard && window.ExcelDashboard.fetchValidationValues) {
+            try {
+                const values = await new Promise((resolve) => {
+                    window.ExcelDashboard.fetchValidationValues(source, resolve);
+                });
+                if (values && values.length > 0) {
+                    return values;
+                }
+            } catch (e) {
+                console.error('Failed to fetch real values:', e);
+            }
+        }
+        
+        return ['Option 1', 'Option 2', 'Option 3'];
+    },
+    
+    // Test functions
+    testD4() {
+        this.showDropdown('D4');
+    },
+    
+    testD5() {
+        this.showDropdown('D5');
+    },
+    
+    // Update status
+    updateStatus(message) {
+        const status = document.getElementById('validationStatus');
+        if (status) {
+            status.textContent = message;
+            console.log('Status:', message);
+        }
+    },
+    
+    // Show current status
+    showStatus() {
+        const cells = ['D4', 'D5', 'E4', 'E5', 'F4', 'F5'];
+        let found = 0;
+        let withDropdown = 0;
+        
+        cells.forEach(addr => {
+            const cell = document.querySelector(`[data-address="${addr}"]`);
+            if (cell) {
+                found++;
+                if (cell.classList.contains('has-dropdown')) {
+                    withDropdown++;
+                }
+            }
+        });
+        
+        this.updateStatus(`Found ${found}/6 cells, ${withDropdown} with dropdown setup`);
+    }
+};
+
+// Auto-setup when page loads
+window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        ValidationManager.setupValidations();
+    }, 2000); // Wait for dashboard to load
+});
+
+// Make it globally accessible
+window.ValidationManager = ValidationManager;
+
+console.log('Validation Manager loaded - use ValidationManager.setupValidations()');
+</script>
+
+</body>
+</html>
