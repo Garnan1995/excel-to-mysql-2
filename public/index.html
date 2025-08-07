@@ -115,23 +115,23 @@
         </div>
     </div>
 
-    <!-- External JavaScript -->
-    <script src="js/excel-engine.js"></script>
-    <script src="js/formula-parser.js"></script>
-    <script src="js/validation-manager.js"></script>
-    <script src="js/dashboard-main.js"></script>
+<!-- External JavaScript -->
+<script src="js/excel-engine.js"></script>
+<script src="js/validation-manager.js"></script>
+<script src="js/dashboard-main.js"></script>
+
+<!-- Initialize Dashboard -->
+<script>
+    // Initialize when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Initializing Excel Dashboard...');
+        if (typeof ExcelDashboard !== 'undefined') {
+            ExcelDashboard.init();
+        } else {
+            console.error('ExcelDashboard not loaded. Check that all JavaScript files are properly loaded.');
+        }
+    });
     
-    <!-- Initialize Dashboard -->
-    <script>
-        // Initialize when DOM is ready
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Initializing Excel Dashboard...');
-            if (typeof ExcelDashboard !== 'undefined') {
-                ExcelDashboard.init();
-            } else {
-                console.error('ExcelDashboard not loaded. Check that all JavaScript files are properly loaded.');
-            }
-        });
-    </script>
+</script>
 </body>
 </html>
